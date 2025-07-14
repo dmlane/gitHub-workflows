@@ -29,6 +29,13 @@ jobs:
           name: dmlane
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      - name: Build default flake package
-        run: nix build .#default
+      - name: Build and show output path
+        run: |
+          nix build --print-out-paths .#default
+
+      - name: Explicitly push to Cachix
+        run: |
+          out=$(nix build --no-link --print-out-paths .#default)
+          echo "Pushing $out to Cachix..."
+          cachix push dmlane "$out"
 
