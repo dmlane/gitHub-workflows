@@ -1,0 +1,34 @@
+name: "Build with Nix and cache with Cachix"
+
+on:
+  workflow_call:
+    secrets:
+      CACHIX_AUTH_TOKEN:
+        required: true
+
+jobs:
+  build:
+    name: Build & Cache (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
+        with:
+          nix_path: nixpkgs=channel:nixos-25.05
+
+      - name: Set up Cachix
+        uses: cachix/cachix-action@v14
+        with:
+          name: dmlane
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      - name: Build default flake package
+        run: nix build .#default
+
