@@ -55,7 +55,7 @@ jobs:
           OUTPUT_PATH="${{ steps.build.outputs.outputs }}"
           PIN_NAME="${PROJECT_NAME}-${ARCH_SUFFIX}"
           echo "Pinning $PIN_NAME -> $OUTPUT_PATH"
-          cachix pin dmlane "$PIN_NAME" "$OUTPUT_PATH" --keep-revisions 10
+          cachix pin dmlane "$PIN_NAME" "$OUTPUT_PATH" --keep-revisions 5
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
