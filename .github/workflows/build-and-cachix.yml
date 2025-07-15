@@ -28,6 +28,8 @@ jobs:
         with:
           name: dmlane
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          extraPullNames: ''
+          skipPush: true
 
       - name: Install cachix CLI (required for manual push)
         run: nix-env -iA cachix -f https://cachix.org/api/v1/install
