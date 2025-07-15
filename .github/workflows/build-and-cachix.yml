@@ -35,10 +35,27 @@ jobs:
         run: nix-env -iA cachix -f https://cachix.org/api/v1/install
 
       - name: Build and push to Cachix
+        id: build
         run: |
           outputs=$(nix build --json --no-link .#default | jq -r '.[].outputs | to_entries[] | select(.key == "out") | .value')
+          echo "outputs=$outputs" >> "$GITHUB_OUTPUT"
           echo "Built output: $outputs"
           ls -la $outputs
           cachix push dmlane --omit-deriver $outputs
 
+      - name: Pin latest build to Cachix
+        run: |
+          PROJECT_NAME=$(basename "$GITHUB_REPOSITORY")
+          OS_NAME="${{ matrix.os }}"
+          case "$OS_NAME" in
+            ubuntu-*)   ARCH_SUFFIX=linux ;;
+            macos-*)    ARCH_SUFFIX=darwin ;;
+            *)          ARCH_SUFFIX=unknown ;;
+          esac
+          OUTPUT_PATH="${{ steps.build.outputs.outputs }}"
+          PIN_NAME="${PROJECT_NAME}-${ARCH_SUFFIX}"
+          echo "Pinning $PIN_NAME -> $OUTPUT_PATH"
+          cachix pin dmlane "$PIN_NAME" "$OUTPUT_PATH" --keep-revisions 10
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
