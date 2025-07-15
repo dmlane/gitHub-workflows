@@ -37,5 +37,6 @@ jobs:
           out=$(nix build --no-link --print-out-paths .#default)
           echo "Built output path: $out"
           ls -la "$out"
-          cachix push dmlane "$out"
+          cachix push dmlane --omit-deriver "$out"
+
 
