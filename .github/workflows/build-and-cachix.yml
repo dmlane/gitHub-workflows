@@ -34,9 +34,9 @@ jobs:
 
       - name: Build and push to Cachix
         run: |
-          out=$(nix build --no-link --print-out-paths .#default)
-          echo "Built output path: $out"
-          ls -la "$out"
-          cachix push dmlane --omit-deriver "$out"
+          outputs=$(nix build --json --no-link .#default | jq -r '.[].outputs | to_entries[] | select(.key == "out") | .value')
+          echo "Built output: $outputs"
+          ls -la $outputs
+          cachix push dmlane --omit-deriver $outputs
 
 
