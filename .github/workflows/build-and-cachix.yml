@@ -37,11 +37,17 @@ jobs:
       - name: Build and push to Cachix
         id: build
         run: |
-          outputs=$(nix build --json --no-link .#default | jq -r '.[].outputs | to_entries[] | select(.key == "out") | .value')
-          echo "outputs=$outputs" >> "$GITHUB_OUTPUT"
-          echo "Built output: $outputs"
-          ls -la $outputs
-          cachix push dmlane --omit-deriver $outputs
+          nix build --no-link --json .#default |
+            jq -r '.[].outputs.out' |
+            tee outputs.txt
+          
+          while read -r out; do
+            echo "Built output: $out"
+            ls -la "$out"
+            cachix push dmlane --omit-deriver "$out"
+          done < outputs.txt
+
+          echo "outputs=$(paste -sd ' ' outputs.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Pin latest build to Cachix
         run: |
