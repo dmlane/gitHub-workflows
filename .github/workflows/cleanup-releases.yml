@@ -1,0 +1,33 @@
+name: Cleanup Old Releases
+
+on:
+  workflow_call:
+    inputs:
+      days-to-keep:
+        required: false
+        default: '90'
+        type: string
+      min-releases-to-keep:
+        required: false
+        default: '5'
+        type: string
+    secrets:
+      GH_TOKEN:
+        required: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout cleanup script
+        uses: actions/checkout@v4
+
+      - name: Run cleanup script
+        run: |
+          pip install PyGithub
+          python3 .github/scripts/cleanup_releases.py \
+            --days ${{ inputs.days-to-keep }} \
+            --keep ${{ inputs.min-releases-to-keep }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
