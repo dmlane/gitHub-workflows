@@ -19,25 +19,19 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout cleanup script
-        uses: actions/checkout@v4
-
       - name: Run cleanup inline
         run: |
           pip install PyGithub
           python3 - <<'EOF'
           import os
-          import argparse
           import warnings
           from datetime import datetime, timedelta, timezone
           from github import Github
 
           warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-          parser = argparse.ArgumentParser()
-          parser.add_argument('--days', type=int, default=90)
-          parser.add_argument('--keep', type=int, default=5)
-          args = parser.parse_args()
+          days = int(os.environ.get("DAYS_TO_KEEP", "90"))
+          keep = int(os.environ.get("MIN_RELEASES_TO_KEEP", "5"))
 
           token = os.environ["GITHUB_TOKEN"]
           repo_name = os.environ["GITHUB_REPOSITORY"]
@@ -47,15 +41,15 @@ jobs:
           releases = list(repo.get_releases())
           releases.sort(key=lambda r: r.created_at, reverse=True)
 
-          cutoff = datetime.now(timezone.utc) - timedelta(days=args.days)
+          cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
           print(f"🧹 Total releases found: {len(releases)}")
-          print(f"🛡️ Keeping the {args.keep} most recent releases, regardless of age.")
+          print(f"🛡️ Keeping the {keep} most recent releases, regardless of age.")
           print(f"🕒 Deleting any older than: {cutoff.isoformat()}")
 
           to_delete = []
           for idx, release in enumerate(releases):
-              if idx < args.keep:
+              if idx < keep:
                   print(f"✅ KEEP (recent): {release.title} ({release.tag_name})")
                   continue
               if release.created_at >= cutoff:
@@ -76,4 +70,6 @@ jobs:
           EOF
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          DAYS_TO_KEEP: ${{ inputs.days-to-keep }}
+          MIN_RELEASES_TO_KEEP: ${{ inputs.min-releases-to-keep }}
 
