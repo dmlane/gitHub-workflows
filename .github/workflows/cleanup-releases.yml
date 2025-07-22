@@ -28,7 +28,7 @@ jobs:
           python3 - <<'EOF'
           import os
           import argparse
-          from datetime import datetime, timedelta
+          from datetime import datetime, timedelta, timezone
           from github import Github
 
           parser = argparse.ArgumentParser()
@@ -44,7 +44,7 @@ jobs:
           releases = list(repo.get_releases())
           releases.sort(key=lambda r: r.created_at, reverse=True)
 
-          cutoff = datetime.utcnow() - timedelta(days=args.days)
+          cutoff = datetime.now(timezone.utc) - timedelta(days=args.days)
           to_delete = []
 
           for idx, release in enumerate(releases):
