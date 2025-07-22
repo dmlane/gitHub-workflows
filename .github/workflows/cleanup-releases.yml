@@ -28,8 +28,11 @@ jobs:
           python3 - <<'EOF'
           import os
           import argparse
+          import warnings
           from datetime import datetime, timedelta, timezone
           from github import Github
+
+          warnings.filterwarnings("ignore", category=DeprecationWarning)
 
           parser = argparse.ArgumentParser()
           parser.add_argument('--days', type=int, default=90)
@@ -45,25 +48,31 @@ jobs:
           releases.sort(key=lambda r: r.created_at, reverse=True)
 
           cutoff = datetime.now(timezone.utc) - timedelta(days=args.days)
-          to_delete = []
 
+          print(f"🧹 Total releases found: {len(releases)}")
+          print(f"🛡️ Keeping the {args.keep} most recent releases, regardless of age.")
+          print(f"🕒 Deleting any older than: {cutoff.isoformat()}")
+
+          to_delete = []
           for idx, release in enumerate(releases):
               if idx < args.keep:
+                  print(f"✅ KEEP (recent): {release.title} ({release.tag_name})")
                   continue
               if release.created_at >= cutoff:
+                  print(f"✅ KEEP (fresh):  {release.title} ({release.tag_name})")
                   continue
+              print(f"🗑️ DELETE: {release.title} ({release.tag_name})")
               to_delete.append(release)
 
-          print(f"Found {len(to_delete)} releases to delete.")
+          print(f"🔎 Total to delete: {len(to_delete)}")
           for release in to_delete:
-              print(f"Deleting release: {release.title} ({release.tag_name})")
               release.delete_release()
               try:
                   ref = repo.get_git_ref(f"tags/{release.tag_name}")
                   ref.delete()
-                  print(f"Deleted tag: {release.tag_name}")
-              except Exception as e:
-                  print(f"Tag not found or already deleted: {release.tag_name}")
+                  print(f"🗑️ Deleted tag: {release.tag_name}")
+              except Exception:
+                  print(f"⚠️ Tag not found or already deleted: {release.tag_name}")
           EOF
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
