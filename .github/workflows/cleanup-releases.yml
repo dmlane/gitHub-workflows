@@ -5,7 +5,7 @@ on:
     inputs:
       days-to-keep:
         required: false
-        default: '7'
+        default: '30'
         type: string
       min-releases-to-keep:
         required: false
