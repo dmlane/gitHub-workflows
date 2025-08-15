@@ -32,13 +32,13 @@ jobs:
           nix_path: nixpkgs=channel:nixos-25.05
           enable_kvm: true
 
-      # macOS: single-user install to avoid _nixbld* user conflicts
-      - name: Install Nix (macOS single-user)
+      # macOS: Determinate Systems installer (multi-user, idempotent)
+      - name: Install Nix (macOS)
         if: runner.os == 'macOS'
-        uses: cachix/install-nix-action@v27
+        uses: DeterminateSystems/nix-installer-action@v14
         with:
-          nix_path: nixpkgs=channel:nixos-25.05
-          install_options: --no-daemon
+          extra-conf: |
+            experimental-features = nix-command flakes
 
       - name: Set up Cachix
         uses: cachix/cachix-action@v14
@@ -48,9 +48,7 @@ jobs:
           extraPullNames: ''
           skipPush: true
 
-      - name: Install cachix CLI (required for manual push)
-        run: nix-env -iA cachix -f https://cachix.org/api/v1/install
-
+      # Build and push all outputs to Cachix
       - name: Build and push to Cachix
         id: build
         run: |
