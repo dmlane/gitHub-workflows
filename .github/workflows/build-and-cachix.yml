@@ -2,6 +2,12 @@ name: "Build with Nix and cache with Cachix"
 
 on:
   workflow_call:
+    inputs:
+      oses:
+        description: 'JSON array of GitHub runner labels to build on'
+        required: false
+        type: string
+        default: '["ubuntu-latest","macos-latest"]'
     secrets:
       CACHIX_AUTH_TOKEN:
         required: true
@@ -12,16 +18,27 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: ${{ fromJson(inputs.oses) }}
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v25
+      # Linux: multi-user install with KVM enabled
+      - name: Install Nix (Linux)
+        if: runner.os == 'Linux'
+        uses: cachix/install-nix-action@v27
         with:
           nix_path: nixpkgs=channel:nixos-25.05
+          enable_kvm: true
+
+      # macOS: single-user install to avoid _nixbld* user conflicts
+      - name: Install Nix (macOS single-user)
+        if: runner.os == 'macOS'
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-25.05
+          install_options: --no-daemon
 
       - name: Set up Cachix
         uses: cachix/cachix-action@v14
@@ -40,7 +57,7 @@ jobs:
           nix build --no-link --json .#default |
             jq -r '.[].outputs.out' |
             tee outputs.txt
-          
+
           while read -r out; do
             echo "Built output: $out"
             ls -la "$out"
