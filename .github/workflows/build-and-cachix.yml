@@ -131,7 +131,7 @@ jobs:
             latest-${{ matrix.os }}.json
             latest-${{ matrix.os }}.txt
           # Let this job update the release created by your auto-release workflow
-          allowUpdates: true
+          overwrite_files: true
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
