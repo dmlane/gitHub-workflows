@@ -101,14 +101,22 @@ jobs:
           # Use the pin name you created (matches your pin step)
           PIN_NAME="${PROJECT_NAME}-${ARCH_SUFFIX}"
 
+          # Raw tag (may start with 'v') and normalized version (no leading 'v')
+          RAW_TAG="${GITHUB_REF_NAME}"
+          VERSION="${RAW_TAG#v}"
+          REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
+          RELEASE_URL="${REPO_URL}/releases/tag/${RAW_TAG}"
+
           cat > "latest-${OS_NAME}.json" <<EOF
           {
             "repo": "${GITHUB_REPOSITORY}",
-            "tag": "${GITHUB_REF_NAME}",
+            "tag": "${RAW_TAG}",
+            "version": "${VERSION}",
             "commit": "${GITHUB_SHA}",
             "os": "${OS_NAME}",
             "pin": "${PIN_NAME}",
             "published_at": "${NOW}",
+            "release_url": "${RELEASE_URL}",
             "cachix": {
               "cache": "dmlane",
               "substituter": "https://dmlane.cachix.org",
