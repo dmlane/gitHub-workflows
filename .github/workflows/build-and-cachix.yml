@@ -12,6 +12,9 @@ on:
       CACHIX_AUTH_TOKEN:
         required: true
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build & Cache (${{ matrix.os }})
@@ -79,4 +82,57 @@ jobs:
           cachix pin dmlane "$PIN_NAME" "$OUTPUT_PATH" --keep-revisions 5
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Create latest manifest files
+        id: latest
+        run: |
+          NOW="$(date -u +%FT%TZ)"
+          PROJECT_NAME="$(basename "$GITHUB_REPOSITORY")"
+          OS_NAME="${{ matrix.os }}"
+          case "$OS_NAME" in
+            ubuntu-*)   ARCH_SUFFIX=linux ;;
+            macos-*)    ARCH_SUFFIX=darwin ;;
+            *)          ARCH_SUFFIX=unknown ;;
+          esac
+
+          # We already captured outputs in the 'Build and push to Cachix' step
+          OUTPATHS="${{ steps.build.outputs.outputs }}"
+
+          # Use the pin name you created (matches your pin step)
+          PIN_NAME="${PROJECT_NAME}-${ARCH_SUFFIX}"
+
+          cat > "latest-${OS_NAME}.json" <<EOF
+          {
+            "repo": "${GITHUB_REPOSITORY}",
+            "tag": "${GITHUB_REF_NAME}",
+            "commit": "${GITHUB_SHA}",
+            "os": "${OS_NAME}",
+            "pin": "${PIN_NAME}",
+            "published_at": "${NOW}",
+            "cachix": {
+              "cache": "dmlane",
+              "substituter": "https://dmlane.cachix.org",
+              "store_paths": [$(printf '"%s"' $OUTPATHS | sed 's/ /","/g')]
+            },
+            "nix": {
+              "attr": "default"
+            }
+          }
+          EOF
+
+          echo "${PROJECT_NAME} ${GITHUB_REF_NAME} ${OS_NAME} ${OUTPATHS} https://dmlane.cachix.org" \
+            > "latest-${OS_NAME}.txt"
+
+      - name: Attach manifest to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            latest-${{ matrix.os }}.json
+            latest-${{ matrix.os }}.txt
+          # Let this job update the release created by your auto-release workflow
+          allowUpdates: true
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
