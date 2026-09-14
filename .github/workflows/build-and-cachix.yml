@@ -38,7 +38,7 @@ jobs:
       # macOS: Determinate Systems installer (multi-user, idempotent)
       - name: Install Nix (macOS)
         if: runner.os == 'macOS'
-        uses: DeterminateSystems/nix-installer-action@v17
+        uses: DeterminateSystems/nix-installer-action@v22
         with:
           extra-conf: |
             experimental-features = nix-command flakes
