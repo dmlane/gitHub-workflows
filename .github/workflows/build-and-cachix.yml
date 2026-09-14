@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Linux: multi-user install with KVM enabled
       - name: Install Nix (Linux)
@@ -38,13 +38,13 @@ jobs:
       # macOS: Determinate Systems installer (multi-user, idempotent)
       - name: Install Nix (macOS)
         if: runner.os == 'macOS'
-        uses: DeterminateSystems/nix-installer-action@v14
+        uses: DeterminateSystems/nix-installer-action@v17
         with:
           extra-conf: |
             experimental-features = nix-command flakes
 
       - name: Set up Cachix
-        uses: cachix/cachix-action@v14
+        uses: cachix/cachix-action@v17
         with:
           name: dmlane
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
@@ -132,7 +132,7 @@ jobs:
             > "latest-${OS_NAME}.txt"
 
       - name: Attach manifest to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           files: |
